@@ -221,7 +221,6 @@ echo "Magento ReIndexing " >&3
 php bin/magento index:reindex
 echo "Magento Cache Flush " >&3
 php bin/magento cache:flush
-sudo service apache2 restart
 # Final echo to console indicating completion
 echo "Setup completed successfully. ElasticSearch and Apache are running. Here are the details for your environment:" >&3
 echo "Magento URL: http://${MAGENTO_BASE_URL}" >&3
