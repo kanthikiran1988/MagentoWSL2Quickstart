@@ -34,7 +34,11 @@ This script automates the process of setting up a Magento development environmen
    ```bash
    ./setup_magento.sh
    ```
-
+## Quickstart
+   ```bash
+   curl -s https://raw.githubusercontent.com/kanthikiran1988/MagentoWSL2Quickstart/master/install_magento.sh > install_magento.sh
+   bash install_magento.sh
+   ```
 ## Important Notes
 - Do not run this script as the root user. It checks for root access and will exit if run as root.
 - The script will prompt you to enter several pieces of information including Magento API keys, personal details for Magento's admin user, and database credentials. Ensure you have this information available before starting.
