@@ -48,10 +48,34 @@ read_input() {
         fi
     done
 }
+# Function to find an available port starting from a given base (e.g., 80)
+find_available_port() {
+    local base_port=$1
+    local port=$base_port
+    local max_port=$(($base_port + 20))
+
+    while [ $port -le $max_port ]; do
+        local result=$(powershell.exe -Command "& {
+            \$connection = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
+            if (\$connection) {
+                Write-Output \"used\"
+            } else {
+                Write-Output \"$port\"
+            }
+        }" | tr -d '\r')
+
+        if [[ "$result" =~ ^[0-9]+$ ]]; then
+            echo $result
+            return 0
+        fi
+        ((port++))
+    done
+
+    echo "No free port found in range $base_port to $max_port." >&2
+    return 1
+}
 
 # Gathering user inputs with validation
-read_input "Enter Magento API Public Key: " MAGENTO_PUBLIC_KEY no
-read_input "Enter Magento API Private Key: " MAGENTO_PRIVATE_KEY yes
 read_input "Enter First Name: " FIRST_NAME no
 read_input "Enter Last Name: " LAST_NAME no
 read_input "Enter Email: " MAGENTO_EMAIL no
@@ -59,6 +83,8 @@ read_input "Enter Username: " MAGENTO_USERNAME no
 read_input "Enter Password: " MAGENTO_PASSWORD yes
 read_input "Enter Site URL (e.g., magento.local): " MAGENTO_BASE_URL no
 read_input "Enter Admin URL (e.g., admin): " MAGENTO_ADMIN_URL no
+read_input "Enter Magento API Public Key: " MAGENTO_PUBLIC_KEY no
+read_input "Enter Magento API Private Key: " MAGENTO_PRIVATE_KEY yes
 
 # Setting up Composer's auth.json configuration
 COMPOSER_AUTH_DIR="$HOME/.config/composer"
@@ -93,11 +119,28 @@ else
     exit 1
 fi
 
+# Automatically find an available port starting from 80
+port==$(find_available_port 80)
+if [[ $? -eq 0 ]]; then
+    echo "Port $port is available."
+else
+    echo "Failed to find an available port."
+    exit 1
+fi
+
+# Update the VirtualHost configuration with the determined port
+if [ "$port" -ne 80 ]; then
+    sudo tee /etc/apache2/ports.conf > /dev/null <<EOT
+Listen $port
+EOT
+fi
+
 # Apache configuration
 echo "Configuring Apache..." >&3
 sudo a2enmod rewrite headers ssl
+# Apache VirtualHost Configuration
 sudo tee /etc/apache2/sites-available/magento.conf > /dev/null <<EOT
-<VirtualHost *:80>
+<VirtualHost *:$port>
     ServerAdmin ${MAGENTO_EMAIL}
     DocumentRoot /var/www/html/magento
     ServerName ${MAGENTO_BASE_URL}
@@ -161,31 +204,35 @@ EOT
 echo "Starting OpenSearch..." >&3
 sudo -u $(whoami) /opt/opensearch-2.12.0/bin/opensearch >& /dev/null &
 
-
+# Conditionally format the base URL depending on the port
+if [ "$port" -ne 80 ]; then
+    MAGENTO_BASE_URL="${MAGENTO_BASE_URL}:${port}"
+fi
 # Magento installation
-echo "Composer Installing in Progressing". PHP_EOL >&3
+echo -e "Installing Composer" >&3
 curl -sS https://getcomposer.org/installer | sudo php
 sudo mv composer.phar /usr/local/bin/composer
 sudo mkdir -p /var/www/html/magento && sudo chown -R $(whoami):www-data /var/www/html
 cd /var/www/html/magento
-echo "Magento Downloading in Progressing". PHP_EOL >&3
+echo "Downloading Magento" >&3
 composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition .
-echo "Magento Installing in Progressing". PHP_EOL >&3
+reset
+echo "Installing Magento" >&3
 php bin/magento setup:install --base-url=http://"${MAGENTO_BASE_URL}" --backend-frontname="${MAGENTO_ADMIN_URL}" --db-name=magento --db-user=magento --db-password="M@gento777" --admin-firstname="${FIRST_NAME}" --admin-lastname="${LAST_NAME}" --admin-email="${MAGENTO_EMAIL}" --admin-user="${MAGENTO_USERNAME}" --admin-password="${MAGENTO_PASSWORD}" --language=en_US --currency=USD --timezone=America/Chicago --use-rewrites=1 --search-engine=elasticsearch7 --elasticsearch-host="localhost" --elasticsearch-port=9200
-echo "Magento Maintenance Progressing". PHP_EOL >&3
+echo "Magento Maintenance " >&3
 php bin/magento setup:upgrade
-echo "Magento Compile Progressing". PHP_EOL >&3
+echo "Magento Compile " >&3
 php bin/magento setup:di:compile
-echo "Magento Static Deploy in Progressing". PHP_EOL >&3
+echo "Magento Static Deploy " >&3
 php bin/magento setup:static-content:deploy -f
-echo "Magento ReIndexing in Progressing". PHP_EOL >&3
+echo "Magento ReIndexing " >&3
 php bin/magento index:reindex
-echo "Magento Cache Flush in Progressing". PHP_EOL >&3
+echo "Magento Cache Flush " >&3
 php bin/magento cache:flush
-
+sudo service apache2 restart
 # Final echo to console indicating completion
-echo "Setup completed successfully. OpenSearch and Apache are running. Here are the details for your environment:". PHP_EOL >&3
-echo "Magento URL: http://${MAGENTO_BASE_URL}". PHP_EOL >&3
+echo "Setup completed successfully. OpenSearch and Apache are running. Here are the details for your environment:" >&3
+echo "Magento URL: http://${MAGENTO_BASE_URL}" >&3
 echo "Magento Admin Panel: http://${MAGENTO_BASE_URL}/${MAGENTO_ADMIN_URL}" >&3
-echo "OpenSearch Access: http://localhost:9200". PHP_EOL >&3
-echo "Please Add this line in hostfile:  ::1 ${MAGENTO_BASE_URL}". PHP_EOL >&3
+echo "OpenSearch Access: http://localhost:9200" >&3
+echo "Please Add this line in hostfile:  ::1 ${MAGENTO_BASE_URL%%:*}" >&3
