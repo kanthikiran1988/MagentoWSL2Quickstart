@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author: Kanthi Kiran K
-# Description: Automates the setup of a development environment on WSL2.
+# Description: Automates the setup of a Magento development environment with elasticsearch on WSL2.
 # Version: 1.0
 
 # Ensure the script is run with normal user privileges and not as root
@@ -179,30 +179,22 @@ sudo chmod 777 /var/run/mysqld/mysqld.sock
 sudo service mysql start
 sudo mysql -u root -e "CREATE DATABASE magento; CREATE USER 'magento'@'localhost' IDENTIFIED BY 'M@gento777'; GRANT ALL ON magento.* TO 'magento'@'localhost';GRANT SUPER ON *.* TO 'magento'@'localhost'; FLUSH PRIVILEGES;" || { echo "MySQL setup failed"; exit 1; }
 
-# OpenSearch installation
-echo "Installing Java for OpenSearch..." >&3
+# ElasticSearch installation
+echo "Installing Java for ElasticSearch..." >&3
 sudo apt install -y openjdk-11-jdk
-# Download and Setup OpenSearch with proper permissions
-echo "Downloading and setting up OpenSearch..." >&3
-wget https://artifacts.opensearch.org/releases/bundle/opensearch/2.12.0/opensearch-2.12.0-linux-x64.tar.gz -O /tmp/opensearch-2.12.0-linux-x64.tar.gz
-echo "Extracting OpenSearch to /opt/opensearch-2.12.0..." >&3
-sudo mkdir -p /opt/opensearch-2.12.0
-sudo tar -xzf /tmp/opensearch-2.12.0-linux-x64.tar.gz -C /opt/opensearch-2.12.0 --strip-components=1
-sudo rm /tmp/opensearch-2.12.0-linux-x64.tar.gz
-# Ensure OpenSearch files ownership is correct
-sudo chown -R $(whoami):$(whoami) /opt/opensearch-2.12.0
+# Download and Setup ElasticSearch with proper permissions
+echo "Downloading and setting up ElasticSearch..." >&3
+wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.9.0-linux-x86_64.tar.gz -O /tmp/elasticsearch-7.9.0-linux-x86_64.tar.gz
+echo "Extracting ElasticSearch to /opt/opensearch-2.12.0..." >&3
+sudo mkdir -p /opt/elasticsearch-7.9.0
+sudo tar -xzf /tmp/elasticsearch-7.9.0-linux-x86_64.tar.gz -C /opt/elasticsearch-7.9.0 --strip-components=1
+sudo rm /tmp/elasticsearch-7.9.0-linux-x86_64.tar.gz
+# Ensure ElasticSearch files ownership is correct
+sudo chown -R $(whoami):$(whoami) /opt/elasticsearch-7.9.0
 
-echo "Configuring OpenSearch..." >&3
-sudo tee /opt/opensearch-2.12.0/config/opensearch.yml > /dev/null <<EOT
-plugins.security.ssl.transport.enabled: false
-plugins.security.ssl.http.enabled: false
-plugins.security.disabled: true
-plugins.security.allow_unsafe_democertificates: true
-EOT
-
-# Starting OpenSearch in the background
-echo "Starting OpenSearch..." >&3
-sudo -u $(whoami) /opt/opensearch-2.12.0/bin/opensearch >& /dev/null &
+# Starting ElasticSearch in the background
+echo "Starting ElasticSearch..." >&3
+sudo -u $(whoami) /opt/elasticsearch-7.9.0/bin/elasticsearch >& /dev/null &
 
 # Conditionally format the base URL depending on the port
 if [ "$port" -ne 80 ]; then
@@ -231,8 +223,8 @@ echo "Magento Cache Flush " >&3
 php bin/magento cache:flush
 sudo service apache2 restart
 # Final echo to console indicating completion
-echo "Setup completed successfully. OpenSearch and Apache are running. Here are the details for your environment:" >&3
+echo "Setup completed successfully. ElasticSearch and Apache are running. Here are the details for your environment:" >&3
 echo "Magento URL: http://${MAGENTO_BASE_URL}" >&3
 echo "Magento Admin Panel: http://${MAGENTO_BASE_URL}/${MAGENTO_ADMIN_URL}" >&3
-echo "OpenSearch Access: http://localhost:9200" >&3
+echo "ElasticSearch Access: http://localhost:9200" >&3
 echo "Please Add this line in hostfile:  ::1 ${MAGENTO_BASE_URL%%:*}" >&3
