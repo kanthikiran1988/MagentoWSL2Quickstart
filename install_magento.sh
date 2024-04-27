@@ -80,7 +80,7 @@ read_input "Enter First Name: " FIRST_NAME no
 read_input "Enter Last Name: " LAST_NAME no
 read_input "Enter Email: " MAGENTO_EMAIL no
 read_input "Enter Username: " MAGENTO_USERNAME no
-read_input "Enter Password: " MAGENTO_PASSWORD yes
+read_input "Enter Password(Min 7 chars, alpha-numeric): " MAGENTO_PASSWORD yes
 read_input "Enter Site URL (e.g., magento.local): " MAGENTO_BASE_URL no
 read_input "Enter Admin URL (e.g., admin): " MAGENTO_ADMIN_URL no
 read_input "Enter Magento API Public Key: " MAGENTO_PUBLIC_KEY no
