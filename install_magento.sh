@@ -120,7 +120,7 @@ else
 fi
 
 # Automatically find an available port starting from 80
-port = $(find_available_port 80)
+port=$(find_available_port 80)
 if [[ $? -eq 0 ]]; then
     echo "Port $port is available."
 else
