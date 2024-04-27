@@ -120,7 +120,7 @@ else
 fi
 
 # Automatically find an available port starting from 80
-port==$(find_available_port 80)
+port = $(find_available_port 80)
 if [[ $? -eq 0 ]]; then
     echo "Port $port is available."
 else
@@ -185,7 +185,7 @@ sudo apt install -y openjdk-11-jdk
 # Download and Setup ElasticSearch with proper permissions
 echo "Downloading and setting up ElasticSearch..." >&3
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.9.0-linux-x86_64.tar.gz -O /tmp/elasticsearch-7.9.0-linux-x86_64.tar.gz
-echo "Extracting ElasticSearch to /opt/opensearch-2.12.0..." >&3
+echo "Extracting ElasticSearch " >&3
 sudo mkdir -p /opt/elasticsearch-7.9.0
 sudo tar -xzf /tmp/elasticsearch-7.9.0-linux-x86_64.tar.gz -C /opt/elasticsearch-7.9.0 --strip-components=1
 sudo rm /tmp/elasticsearch-7.9.0-linux-x86_64.tar.gz
