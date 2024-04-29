@@ -86,6 +86,11 @@ read_input "Enter Admin URL (e.g., admin): " MAGENTO_ADMIN_URL no
 read_input "Enter Magento API Public Key: " MAGENTO_PUBLIC_KEY no
 read_input "Enter Magento API Private Key: " MAGENTO_PRIVATE_KEY yes
 
+# System updates and package installations
+echo "Updating system packages..." >&3
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y wget tar curl software-properties-common lsb-release ca-certificates apt-transport-https zip unzip
+
 # Setting up Composer's auth.json configuration
 COMPOSER_AUTH_DIR="$HOME/.config/composer"
 mkdir -p "$COMPOSER_AUTH_DIR" && echo "Created Composer config directory at $COMPOSER_AUTH_DIR"
@@ -101,11 +106,6 @@ cat > "$AUTH_JSON_FILE" <<EOF
     }
 }
 EOF
-
-# System updates and package installations
-echo "Updating system packages..." >&3
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y wget tar curl software-properties-common lsb-release ca-certificates apt-transport-https zip unzip
 
 # Apache and PHP installation
 echo "Installing Apache and PHP..." >&3
@@ -178,7 +178,12 @@ sudo chmod 755 /var/run/mysqld
 sudo chmod 777 /var/run/mysqld/mysqld.sock 
 sudo service mysql start
 sudo mysql -u root -e "CREATE DATABASE magento; CREATE USER 'magento'@'localhost' IDENTIFIED BY 'M@gento777'; GRANT ALL ON magento.* TO 'magento'@'localhost';GRANT SUPER ON *.* TO 'magento'@'localhost'; FLUSH PRIVILEGES;" || { echo "MySQL setup failed"; exit 1; }
-
+if [ $? -eq 0 ]; then
+    echo "Mysql installed successfully." >&3
+else
+    echo "Failed to install Mysql." >&3
+    exit 1
+fi
 # ElasticSearch installation
 echo "Installing Java for ElasticSearch..." >&3
 sudo apt install -y openjdk-11-jdk
@@ -195,7 +200,12 @@ sudo chown -R $(whoami):$(whoami) /opt/elasticsearch-7.9.0
 # Starting ElasticSearch in the background
 echo "Starting ElasticSearch..." >&3
 sudo -u $(whoami) /opt/elasticsearch-7.9.0/bin/elasticsearch >& /dev/null &
-
+if [ $? -eq 0 ]; then
+    echo "Elasticsearch Started successfully." >&3
+else
+    echo "Failed to Start Elasticsearch." >&3
+    exit 1
+fi
 # Conditionally format the base URL depending on the port
 if [ "$port" -ne 80 ]; then
     MAGENTO_BASE_URL="${MAGENTO_BASE_URL}:${port}"
@@ -207,13 +217,31 @@ sudo mv composer.phar /usr/local/bin/composer
 sudo mkdir -p /var/www/html/magento && sudo chown -R $(whoami):www-data /var/www/html
 cd /var/www/html/magento
 echo "Downloading Magento" >&3
-composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition .
+composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition /var/www/html/magento
+if [ $? -eq 0 ]; then
+    echo "Magento Downloaded successfully." >&3
+else
+    echo "Failed to Downloaded Magento." >&3
+    exit 1
+fi
 reset
 echo "Installing Magento" >&3
 php bin/magento setup:install --base-url=http://"${MAGENTO_BASE_URL}" --backend-frontname="${MAGENTO_ADMIN_URL}" --db-name=magento --db-user=magento --db-password="M@gento777" --admin-firstname="${FIRST_NAME}" --admin-lastname="${LAST_NAME}" --admin-email="${MAGENTO_EMAIL}" --admin-user="${MAGENTO_USERNAME}" --admin-password="${MAGENTO_PASSWORD}" --language=en_US --currency=USD --timezone=America/Chicago --use-rewrites=1 --search-engine=elasticsearch7 --elasticsearch-host="localhost" --elasticsearch-port=9200
+if [ $? -eq 0 ]; then
+    echo "Magento Install successfully." >&3
+else
+    echo "Failed to Install Magento." >&3
+    exit 1
+fi
 php bin/magento module:disable Magento_AdminAdobeImsTwoFactorAuth Magento_TwoFactorAuth
 echo "Magento Maintenance " >&3
 php bin/magento setup:upgrade
+if [ $? -eq 0 ]; then
+    echo "Magento Upgrade successfully." >&3
+else
+    echo "Failed to Upgrade Magento." >&3
+    exit 1
+fi
 echo "Magento Compile " >&3
 php bin/magento setup:di:compile
 echo "Magento Static Deploy " >&3
