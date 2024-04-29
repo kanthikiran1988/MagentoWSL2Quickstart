@@ -9,7 +9,7 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 Write-Output "Enabling WSL..."
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-Write-Output "Downloading WSL update package for your architecture..."
+Write-Output "Downloading WSL updates..."
 wsl --update
 Write-Output "Installing WSL Ubuntu..."
 wsl --install -d Ubuntu
