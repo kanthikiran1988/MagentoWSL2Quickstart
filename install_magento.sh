@@ -121,8 +121,8 @@ fi
 
 # Automatically find an available port starting from 80
 port=$(find_available_port 80)
-if [[ $? -eq 0 ]]; then
-    echo "Port $port is available."
+if [ "$port" -ne 80 ]; then
+    echo "Port $port is available for configuration."
 else
     echo "Failed to find an available port."
     exit 1
@@ -211,6 +211,7 @@ composer create-project --repository-url=https://repo.magento.com/ magento/proje
 reset
 echo "Installing Magento" >&3
 php bin/magento setup:install --base-url=http://"${MAGENTO_BASE_URL}" --backend-frontname="${MAGENTO_ADMIN_URL}" --db-name=magento --db-user=magento --db-password="M@gento777" --admin-firstname="${FIRST_NAME}" --admin-lastname="${LAST_NAME}" --admin-email="${MAGENTO_EMAIL}" --admin-user="${MAGENTO_USERNAME}" --admin-password="${MAGENTO_PASSWORD}" --language=en_US --currency=USD --timezone=America/Chicago --use-rewrites=1 --search-engine=elasticsearch7 --elasticsearch-host="localhost" --elasticsearch-port=9200
+php bin/magento module:disable Magento_AdminAdobeImsTwoFactorAuth Magento_TwoFactorAuth
 echo "Magento Maintenance " >&3
 php bin/magento setup:upgrade
 echo "Magento Compile " >&3
@@ -223,7 +224,8 @@ echo "Magento Cache Flush " >&3
 php bin/magento cache:flush
 # Final echo to console indicating completion
 echo "Setup completed successfully. ElasticSearch and Apache are running. Here are the details for your environment:" >&3
+echo "ElasticSearch Access: http://localhost:9200" >&3
+echo "Please Add this line in host file:  127.0.0.1 ${MAGENTO_BASE_URL%%:*}" >&3
+echo "Please Add this line in host file:  ::1 ${MAGENTO_BASE_URL%%:*}" >&3
 echo "Magento URL: http://${MAGENTO_BASE_URL}" >&3
 echo "Magento Admin Panel: http://${MAGENTO_BASE_URL}/${MAGENTO_ADMIN_URL}" >&3
-echo "ElasticSearch Access: http://localhost:9200" >&3
-echo "Please Add this line in hostfile:  ::1 ${MAGENTO_BASE_URL%%:*}" >&3
