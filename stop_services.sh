@@ -16,33 +16,28 @@ stop_service() {
 stop_service "apache2"
 stop_service "mysql"
 
-# Elasticsearch may require a specific command to stop gracefully
-ELASTICSEARCH_DIR="/opt/elasticsearch-7.9.0"
-ELASTICSEARCH_BIN="$ELASTICSEARCH_DIR/bin/elasticsearch"
-
 # Attempt to find the Elasticsearch process
-ES_PID=$(pgrep -f "$ELASTICSEARCH_BIN")
-if [ -n "$ES_PID" ]; then
-    echo "Elasticsearch is running with PID: $ES_PID. Attempting to stop..."
-    kill $ES_PID
+# Find all Elasticsearch process IDs
+pids=$(pgrep -f elasticsearch)
 
-    # Wait a bit to ensure the process has been terminated
+# Check if any PIDs were found
+if [ -z "$pids" ]; then
+    echo "No Elasticsearch processes found."
+else
+    # Try to gracefully shut down each process
+    echo "Attempting to gracefully shut down Elasticsearch processes..."
+    kill $pids
+
+    # Wait for a moment to allow processes to terminate
     sleep 5
 
-    # Check if the process is still running and try to kill it again using kill -9 if needed
-    if ps -p $ES_PID > /dev/null 2>&1; then
-        echo "Regular stop failed, using kill -9..."
-        kill -9 $ES_PID
-        sleep 5
-    fi
+    # Check if any processes are still running and forcefully kill them
+    for pid in $pids; do
+        if kill -0 $pid 2>/dev/null; then
+            echo "Process $pid did not terminate, forcefully killing it..."
+            kill -9 $pid
+        fi
+    done
 
-    # Confirm process is stopped
-    if ps -p $ES_PID > /dev/null 2>&1; then
-        echo "Failed to stop Elasticsearch process."
-        exit 1
-    else
-        echo "Elasticsearch stopped successfully."
-    fi
-else
-    echo "No Elasticsearch process found."
+    echo "All Elasticsearch processes have been terminated."
 fi
