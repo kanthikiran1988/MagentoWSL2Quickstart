@@ -69,13 +69,13 @@ find_available_port() {
 
         echo "Result for port $port: $result"
         if [[ "$result" =~ ^[0-9]+$ ]]; then
-            echo "Port $port is available."
+            echo "Port $port is available.">&3
             return 0
         fi
         ((port++))
     done
 
-    echo "No free port found in range $base_port to $max_port." >&2
+    echo "No free port found in range $base_port to $max_port." >&3
     return 1
 }
 # Gathering user inputs with validation
@@ -116,18 +116,18 @@ sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update
 sudo apt install -y apache2 php8.2 libapache2-mod-php8.2 php8.2-cli php8.2-common php8.2-mbstring php8.2-xml php8.2-mysql php8.2-curl php8.2-gd php8.2-bcmath php8.2-intl php8.2-soap php8.2-zip php8.2-xmlrpc
 if [ $? -eq 0 ]; then
-    echo "Apache and PHP installed successfully."
+    echo "Apache and PHP installed successfully.">&3
 else
-    echo "Failed to install Apache and PHP."
+    echo "Failed to install Apache and PHP.">&3
     exit 1
 fi
 
 # Automatically find an available port starting from 80
 port=$(find_available_port 80)
 if [ $? -eq 0 ]; then
-    echo "Port $port is available for configuration."
+    echo "Port $port is available for configuration.">&3
 else
-    echo "Failed to find an available port."
+    echo "Failed to find an available port.">&3
     exit 1
 fi
 
@@ -166,9 +166,9 @@ APACHE_ENVVARS="/etc/apache2/envvars"
 sudo sed -i "s/export APACHE_RUN_USER=.*/export APACHE_RUN_USER=$(whoami)/" $APACHE_ENVVARS
 sudo service apache2 restart
 if [ $? -eq 0 ]; then
-    echo "Apache configured successfully."
+    echo "Apache configured successfully.">&3
 else
-    echo "Failed to configure Apache."
+    echo "Failed to configure Apache.">&3
     exit 1
 fi
 
