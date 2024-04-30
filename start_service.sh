@@ -22,7 +22,7 @@ start_service "mysql"
 
 # Start Elasticsearch
 echo "Starting Elasticsearch..."
-if sudo -u $(whoami) $ELASTICSEARCH_BIN >& /dev/null & then
+if  bash /$ELASTICSEARCH_BIN >& /dev/null & then
     sleep 10  # Allow some time for Elasticsearch to start
     NEW_ES_PID=$!
     if ps -p $NEW_ES_PID > /dev/null; then
