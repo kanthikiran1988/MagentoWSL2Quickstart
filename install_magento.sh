@@ -53,10 +53,7 @@ find_available_port() {
     local base_port=$1
     local port=$base_port
     local max_port=$(($base_port + 20))
-    echo "Checking ports from $base_port to $max_port..."
-
     while [ $port -le $max_port ]; do
-        echo "Checking port $port..."
         local result=$(powershell.exe -Command "& {
             \$port = $port
             \$connection = Get-NetTCPConnection -LocalPort \$port -ErrorAction SilentlyContinue
@@ -66,10 +63,8 @@ find_available_port() {
                 Write-Output '$port'
             }
         }" | tr -d '\r')
-
-        echo "Result for port $port: $result"
         if [[ "$result" =~ ^[0-9]+$ ]]; then
-            echo "Port $port is available.">&3
+            echo $result
             return 0
         fi
         ((port++))
