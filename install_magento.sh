@@ -231,8 +231,12 @@ else
     echo "Failed to Install Magento." >&3
     exit 1
 fi
-php bin/magento module:disable Magento_AdminAdobeImsTwoFactorAuth Magento_TwoFactorAuth
+
 echo "Magento Maintenance " >&3
+php bin/magento module:disable Magento_AdminAdobeImsTwoFactorAuth Magento_TwoFactorAuth
+curl -s https://raw.githubusercontent.com/kanthikiran1988/MagentoWSL2Quickstart/master/start_magento.sh > start_magento.sh
+curl -s https://raw.githubusercontent.com/kanthikiran1988/MagentoWSL2Quickstart/master/stop_magento.sh > stop_magento.sh
+chmod +x *.sh
 php bin/magento setup:upgrade
 if [ $? -eq 0 ]; then
     echo "Magento Upgrade successfully." >&3
