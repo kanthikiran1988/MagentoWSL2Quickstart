@@ -53,19 +53,23 @@ find_available_port() {
     local base_port=$1
     local port=$base_port
     local max_port=$(($base_port + 20))
+    echo "Checking ports from $base_port to $max_port..."
 
     while [ $port -le $max_port ]; do
+        echo "Checking port $port..."
         local result=$(powershell.exe -Command "& {
-            \$connection = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
+            \$port = $port
+            \$connection = Get-NetTCPConnection -LocalPort \$port -ErrorAction SilentlyContinue
             if (\$connection) {
-                Write-Output \"used\"
+                Write-Output 'used'
             } else {
-                Write-Output \"$port\"
+                Write-Output '$port'
             }
         }" | tr -d '\r')
 
+        echo "Result for port $port: $result"
         if [[ "$result" =~ ^[0-9]+$ ]]; then
-            echo $result
+            echo "Port $port is available."
             return 0
         fi
         ((port++))
@@ -74,7 +78,6 @@ find_available_port() {
     echo "No free port found in range $base_port to $max_port." >&2
     return 1
 }
-
 # Gathering user inputs with validation
 read_input "Enter First Name: " FIRST_NAME no
 read_input "Enter Last Name: " LAST_NAME no
@@ -121,7 +124,7 @@ fi
 
 # Automatically find an available port starting from 80
 port=$(find_available_port 80)
-if [ "$port" -ne 80 ]; then
+if [ $? -eq 0 ]; then
     echo "Port $port is available for configuration."
 else
     echo "Failed to find an available port."
