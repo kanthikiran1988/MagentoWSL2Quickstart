@@ -259,3 +259,4 @@ echo "Please Add this line in host file:  127.0.0.1 ${MAGENTO_BASE_URL%%:*}" >&3
 echo "Please Add this line in host file:  ::1 ${MAGENTO_BASE_URL%%:*}" >&3
 echo "Magento URL: http://${MAGENTO_BASE_URL}" >&3
 echo "Magento Admin Panel: http://${MAGENTO_BASE_URL}/${MAGENTO_ADMIN_URL}" >&3
+rm install_magento.sh
