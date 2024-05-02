@@ -28,11 +28,11 @@ This script automates the process of setting up a Magento development environmen
 3. Download this script to a convenient location in your WSL2 environment.
 4. Make the script executable:
    ```bash
-   chmod +x setup_magento.sh
+   chmod +x install_magento.sh
    ```
 5. Run the script:
    ```bash
-   ./setup_magento.sh
+   bash install_magento.sh
    ```
 ## Quickstart
    ```bash
